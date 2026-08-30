@@ -1,0 +1,26 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: deskmate
+      POSTGRES_PASSWORD: deskmate
+      POSTGRES_DB: deskmate
+    ports:
+      - "5432:5432"
+    volumes:
+      - deskmate_postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - deskmate_redis_data:/data
+
+volumes:
+  deskmate_postgres_data:
+  deskmate_redis_data:
