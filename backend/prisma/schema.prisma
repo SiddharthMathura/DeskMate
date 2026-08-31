@@ -1,0 +1,103 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  agent
+  admin
+}
+
+enum TicketStatus {
+  open
+  pending
+  resolved
+  closed
+}
+
+enum TicketPriority {
+  low
+  normal
+  high
+  urgent
+}
+
+enum MessageSenderType {
+  customer
+  agent
+  ai_draft
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  role      UserRole
+  createdAt DateTime @default(now()) @map("created_at")
+
+  assignedTickets Ticket[] @relation("AssignedAgent")
+  messages        Message[]
+
+  @@map("users")
+}
+
+model Customer {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  createdAt DateTime @default(now()) @map("created_at")
+
+  tickets Ticket[]
+
+  @@map("customers")
+}
+
+model Ticket {
+  id               String         @id @default(uuid())
+  customerId       String         @map("customer_id")
+  assignedAgentId  String?        @map("assigned_agent_id")
+  subject          String
+  status           TicketStatus   @default(open)
+  priority         TicketPriority @default(normal)
+  createdAt        DateTime       @default(now()) @map("created_at")
+  updatedAt        DateTime       @updatedAt @map("updated_at")
+
+  customer       Customer          @relation(fields: [customerId], references: [id])
+  assignedAgent  User?             @relation("AssignedAgent", fields: [assignedAgentId], references: [id])
+  messages       Message[]
+  draftRequests  AiDraftRequest[]
+
+  @@map("tickets")
+}
+
+model Message {
+  id         String            @id @default(uuid())
+  ticketId   String            @map("ticket_id")
+  senderType MessageSenderType @map("sender_type")
+  senderId   String?           @map("sender_id")
+  body       String
+  isDraft    Boolean           @default(false) @map("is_draft")
+  createdAt  DateTime          @default(now()) @map("created_at")
+
+  ticket Ticket @relation(fields: [ticketId], references: [id])
+  agent  User?  @relation(fields: [senderId], references: [id])
+
+  @@map("messages")
+}
+
+model AiDraftRequest {
+  id                String   @id @default(uuid())
+  ticketId          String   @map("ticket_id")
+  promptSnapshot    String   @map("prompt_snapshot")
+  responseSnapshot  String   @map("response_snapshot")
+  modelUsed         String   @map("model_used")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  ticket Ticket @relation(fields: [ticketId], references: [id])
+
+  @@map("ai_draft_requests")
+}
