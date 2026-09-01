@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { encrypt, decrypt } from '../src/auth/crypto.util';
+import { encrypt, decrypt } from '../src/auth/redis.crypto.util';
 import { redisClient, connectRedis } from '../src/db/redis';
 
 async function runTest() {
