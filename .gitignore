@@ -3,6 +3,9 @@ node_modules/
 dist/
 *.log
 
+# Authentication testing files
+cookies.txt
+
 # Backend specific ignores
 backend/.env
 backend/src/generated/prisma

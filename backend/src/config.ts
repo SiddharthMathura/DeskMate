@@ -10,6 +10,7 @@ const requiredEnv = (key: string): string => {
 
 export const config = {
   port: parseInt(process.env.PORT || '5000', 10),
+  nodeEnv: process.env.NODE_ENV || 'development',
   databaseUrl: requiredEnv('DATABASE_URL'),
   redisUrl: requiredEnv('REDIS_URL'),
   sessionCookieName: process.env.SESSION_COOKIE_NAME || 'deskmate_sid',
