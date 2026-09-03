@@ -1,0 +1,50 @@
+import { Router } from 'express';
+import { requireAuth } from '../middleware/auth.middleware';
+import {
+    createTicketSchema,
+    patchTicketSchema,
+    listTicketsQuerySchema,
+} from '../schemas/ticket.schema';
+import * as ticketService from '../services/ticket.service';
+
+const ticketsRouter = Router();
+ticketsRouter.use(requireAuth);
+
+// GET /api/tickets?status=open&assignedAgentId=me|unassigned|<uuid>
+ticketsRouter.get('/', async (req, res) => {
+    const parsed = listTicketsQuerySchema.parse(req.query);
+    const assignedAgentId = parsed.assignedAgentId === 'me' ? req.session!.userId : parsed.assignedAgentId;
+    const tickets = await ticketService.listTickets({
+        status: parsed.status,
+        assignedAgentId,
+    });
+    res.json({ tickets });
+});
+
+// GET /api/tickets/:id
+ticketsRouter.get('/:id', async (req, res) => {
+    const ticket = await ticketService.getTicketById(req.params.id);
+    res.json({ ticket });
+});
+
+// POST /api/tickets
+ticketsRouter.post('/', async (req, res) => {
+    const data = createTicketSchema.parse(req.body);
+    const ticket = await ticketService.createTicket(data);
+    res.status(201).json({ ticket });
+});
+
+// PATCH /api/tickets/:id
+ticketsRouter.patch('/:id', async (req, res) => {
+    const data = patchTicketSchema.parse(req.body);
+    const ticket = await ticketService.updateTicket(req.params.id, data);
+    res.json({ ticket });
+});
+
+// POST /api/tickets/:id/claim
+ticketsRouter.post('/:id/claim', async (req, res) => {
+    const ticket = await ticketService.claimTicket(req.params.id, req.session!.userId);
+    res.json({ ticket });
+});
+
+export default ticketsRouter;

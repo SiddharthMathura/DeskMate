@@ -8,8 +8,8 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
     "prisma:generate": "prisma generate",
-    "create-agent": "tsx scripts/create-test-agent.ts",
-    "seed": "tsx prisma/seed.ts"
+    "seed": "tsx prisma/seed.ts",
+    "studio": "prisma studio"
   },
   "keywords": [],
   "author": "Siddharth Mathura",
