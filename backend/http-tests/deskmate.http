@@ -1,0 +1,180 @@
+### ============================================
+### DeskMate API Test Suite
+### Requires: VS Code "REST Client" extension
+### Run top-to-bottom in order — later requests depend on earlier
+### ones (session cookie from Login, ticket id from Create Ticket).
+### ============================================
+
+@baseUrl = http://localhost:5000
+
+# Fill these in from backend/prisma/seed.ts
+@agentEmail = example@domain.com
+@agentPassword = enter-password
+@customerId = 00000000-0000-0000-0000-000000000000
+
+# Safe dummy placeholders
+# @agentEmail = example@domain.com
+# @agentPassword = change-password
+# @customerId = 00000000-0000-0000-0000-000000000000
+
+############################
+### AUTH
+############################
+
+### Login - valid credentials -> 200 + Set-Cookie
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{agentEmail}}",
+  "password": "{{agentPassword}}"
+}
+
+### Login - wrong password -> 401
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{agentEmail}}",
+  "password": "definitely-wrong"
+}
+
+### Login - invalid payload (missing password) -> 400
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{agentEmail}}"
+}
+
+### Me - authenticated (run after the first Login above) -> 200
+GET {{baseUrl}}/api/auth/me
+
+### Logout -> 204
+POST {{baseUrl}}/api/auth/logout
+
+### Me - after logout -> 401
+GET {{baseUrl}}/api/auth/me
+
+############################
+### RE-LOGIN (tickets/messages below need an active session)
+############################
+
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{agentEmail}}",
+  "password": "{{agentPassword}}"
+}
+
+############################
+### TICKETS
+############################
+
+### Create ticket - valid -> 201
+# @name createTicket
+POST {{baseUrl}}/api/tickets
+Content-Type: application/json
+
+{
+  "customerId": "{{customerId}}",
+  "subject": "Cannot log in to my account",
+  "priority": "high"
+}
+
+### Create ticket - missing customerId -> 400 validation error
+POST {{baseUrl}}/api/tickets
+Content-Type: application/json
+
+{
+  "subject": "No customer attached"
+}
+
+### Create ticket - invalid priority enum -> 400 validation error
+POST {{baseUrl}}/api/tickets
+Content-Type: application/json
+
+{
+  "customerId": "{{customerId}}",
+  "subject": "Bad priority value",
+  "priority": "critical"
+}
+
+### List tickets - all -> 200, non-empty array
+GET {{baseUrl}}/api/tickets
+
+### List tickets - filter status=open -> 200
+GET {{baseUrl}}/api/tickets?status=open
+
+### List tickets - filter combo yielding empty result -> 200, []
+GET {{baseUrl}}/api/tickets?status=closed&assignedAgentId=unassigned
+
+### Get ticket by id - valid (uses id from Create ticket above) -> 200
+GET {{baseUrl}}/api/tickets/{{createTicket.response.body.$.ticket.id}}
+
+### Get ticket by id - not found -> 404
+GET {{baseUrl}}/api/tickets/00000000-0000-0000-0000-000000000000
+
+### Patch ticket - update status -> 200
+PATCH {{baseUrl}}/api/tickets/{{createTicket.response.body.$.ticket.id}}
+Content-Type: application/json
+
+{
+  "status": "pending"
+}
+
+### Patch ticket - empty body -> 400 (refine: at least one field required)
+PATCH {{baseUrl}}/api/tickets/{{createTicket.response.body.$.ticket.id}}
+Content-Type: application/json
+
+{}
+
+### Patch ticket - not found -> 404
+PATCH {{baseUrl}}/api/tickets/00000000-0000-0000-0000-000000000000
+Content-Type: application/json
+
+{
+  "status": "resolved"
+}
+
+### Claim ticket - valid -> 200, assignedAgentId = current agent
+POST {{baseUrl}}/api/tickets/{{createTicket.response.body.$.ticket.id}}/claim
+
+### Claim ticket - not found -> 404
+POST {{baseUrl}}/api/tickets/00000000-0000-0000-0000-000000000000/claim
+
+############################
+### MESSAGES
+############################
+
+### List messages - empty thread (fresh ticket) -> 200, []
+GET {{baseUrl}}/api/tickets/{{createTicket.response.body.$.ticket.id}}/messages
+
+### List messages - ticket not found -> 404
+GET {{baseUrl}}/api/tickets/00000000-0000-0000-0000-000000000000/messages
+
+### Create message - valid -> 201
+POST {{baseUrl}}/api/tickets/{{createTicket.response.body.$.ticket.id}}/messages
+Content-Type: application/json
+
+{
+  "body": "Thanks for reaching out — looking into this now."
+}
+
+### Create message - missing body -> 400 validation error
+POST {{baseUrl}}/api/tickets/{{createTicket.response.body.$.ticket.id}}/messages
+Content-Type: application/json
+
+{}
+
+### Create message - ticket not found -> 404
+POST {{baseUrl}}/api/tickets/00000000-0000-0000-0000-000000000000/messages
+Content-Type: application/json
+
+{
+  "body": "Should never save"
+}
+
+### List messages - now non-empty (contains the message just created) -> 200
+GET {{baseUrl}}/api/tickets/{{createTicket.response.body.$.ticket.id}}/messages
