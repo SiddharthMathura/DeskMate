@@ -6,6 +6,7 @@ import {
     listTicketsQuerySchema,
 } from '../schemas/ticket.schema';
 import * as ticketService from '../services/ticket.service';
+import messagesRouter from './message.routes';
 
 const ticketsRouter = Router();
 ticketsRouter.use(requireAuth);
@@ -46,5 +47,8 @@ ticketsRouter.post('/:id/claim', async (req, res) => {
     const ticket = await ticketService.claimTicket(req.params.id, req.session!.userId);
     res.json({ ticket });
 });
+
+// GET/POST /api/tickets/:id/messages - nested message thread
+ticketsRouter.use('/:id/messages', messagesRouter);
 
 export default ticketsRouter;
