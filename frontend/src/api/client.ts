@@ -68,11 +68,28 @@ export const authApi = {
 
 // Tickets
 export const ticketsApi = {
-    list: (filters: ListTicketsFilters = {}) => apiClient.get<Ticket[]>(`/tickets${buildQuery(filters as Record<string, string | undefined>)}`),
-    get: (id: string) => apiClient.get<Ticket>(`/tickets/${id}`),
-    create: (data: CreateTicketInput) => apiClient.post<Ticket>('/tickets', data),
-    patch: (id: string, data: PatchTicketInput) => apiClient.patch<Ticket>(`/tickets/${id}`, data),
-    claim: (id: string) => apiClient.post<Ticket>(`/tickets/${id}/claim`),
+    list: async (filters: ListTicketsFilters = {}) => {
+        const { tickets } = await apiClient.get<{ tickets: Ticket[] }>(
+            `/tickets${buildQuery(filters as Record<string, string | undefined>)}`
+        );
+        return tickets;
+    },
+    get: async (id: string) => {
+        const { ticket } = await apiClient.get<{ ticket: Ticket }>(`/tickets/${id}`);
+        return ticket;
+    },
+    create: async (data: CreateTicketInput) => {
+        const { ticket } = await apiClient.post<{ ticket: Ticket }>('/tickets', data);
+        return ticket;
+    },
+    patch: async (id: string, data: PatchTicketInput) => {
+        const { ticket } = await apiClient.patch<{ ticket: Ticket }>(`/tickets/${id}`, data);
+        return ticket;
+    },
+    claim: async (id: string) => {
+        const { ticket } = await apiClient.post<{ ticket: Ticket }>(`/tickets/${id}/claim`);
+        return ticket;
+    },
 };
 
 // Messages

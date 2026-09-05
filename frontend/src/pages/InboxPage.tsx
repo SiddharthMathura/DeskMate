@@ -1,9 +1,19 @@
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { ticketsApi, ApiError } from '../api/client';
+import type { Ticket } from '../types';
+import { TicketList } from '../components/TicketList';
+import { AssigneeFilter, type AssigneeFilterValue } from '../components/AssignessFilter';
 
 export function InboxPage() {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
+
+    const [tickets, setTickets] = useState<Ticket[]>([]);
+    const [assigneeFilter, setAssigneeFilter] = useState<AssigneeFilterValue>('all');
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     const initials = user?.name
         ? user.name
@@ -13,6 +23,25 @@ export function InboxPage() {
               .join('')
               .toUpperCase()
         : '?';
+
+    const loadTickets = useCallback(async (filter: AssigneeFilterValue) => {
+        setLoading(true);
+        setError(null);
+        try {
+            const result = await ticketsApi.list(
+                filter === 'all' ? {} : { assignedAgentId: filter }
+            );
+            setTickets(result);
+        } catch (err) {
+            setError(err instanceof ApiError ? err.message : 'Failed to load tickets.');
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        void loadTickets(assigneeFilter);
+    }, [assigneeFilter, loadTickets]);
 
     async function handleLogout() {
         await logout();
@@ -37,10 +66,25 @@ export function InboxPage() {
                 </div>
             </header>
 
-            <main className="p-6">
-                <div className="rounded-lg border border-line bg-surface p-8 text-center">
-                    <p className="text-sm text-ink-soft">Ticket inbox</p>
+            <main className="mx-auto max-w-5xl p-6">
+                <div className="mb-4 flex items-center justify-between">
+                    <h1 className="font-display text-xl font-semibold text-ink">Inbox</h1>
+                    <AssigneeFilter value={assigneeFilter} onChange={setAssigneeFilter} />
                 </div>
+
+                {error && (
+                    <div className="mb-4 rounded-md border border-status-pending/30 bg-status-pending/10 px-4 py-3 text-sm text-status-pending">
+                        {error}
+                    </div>
+                )}
+
+                {loading ? (
+                    <div className="rounded-lg border border-line bg-surface p-8 text-center">
+                        <p className="text-sm text-ink-soft">Loading tickets…</p>
+                    </div>
+                ) : (
+                    <TicketList tickets={tickets} />
+                )}
             </main>
         </div>
     );
