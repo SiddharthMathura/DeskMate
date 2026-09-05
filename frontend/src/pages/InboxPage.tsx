@@ -83,7 +83,7 @@ export function InboxPage() {
                         <p className="text-sm text-ink-soft">Loading tickets…</p>
                     </div>
                 ) : (
-                    <TicketList tickets={tickets} />
+                    <TicketList tickets={tickets} onSelect={(ticket) => navigate(`/tickets/${ticket.id}`)} />
                 )}
             </main>
         </div>

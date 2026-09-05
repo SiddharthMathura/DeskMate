@@ -94,6 +94,12 @@ export const ticketsApi = {
 
 // Messages
 export const messagesApi = {
-    list: (ticketId: string) => apiClient.get<Message[]>(`/tickets/${ticketId}/messages`),
-    create: (ticketId: string, data: CreateMessageInput) => apiClient.post<Message>(`/tickets/${ticketId}/messages`, data),
+    list: async (ticketId: string) => {
+        const { messages } = await apiClient.get<{ messages: Message[] }>(`/tickets/${ticketId}/messages`);
+        return messages;
+    },
+    create: async (ticketId: string, data: CreateMessageInput) => {
+        const { message } = await apiClient.post<{ message: Message }>(`/tickets/${ticketId}/messages`, data);
+        return message;
+    },
 };

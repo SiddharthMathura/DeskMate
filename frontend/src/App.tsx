@@ -2,6 +2,7 @@ import { Routes, Route } from 'react-router-dom';
 import { useHealthCheck } from './hooks/useHealthCheck';
 import { LoginPage } from './pages/LoginPage';
 import { InboxPage } from './pages/InboxPage';
+import { TicketPage } from './pages/TicketPage';
 
 function HealthCheckPage() {
   const { status, data } = useHealthCheck();
@@ -38,6 +39,7 @@ function App() {
       <Route path="/" element={<HealthCheckPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/inbox" element={<InboxPage />} />
+      <Route path="/tickets/:id" element={<TicketPage />} />
     </Routes>
   );
 }
