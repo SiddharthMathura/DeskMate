@@ -103,3 +103,16 @@ export const messagesApi = {
         return message;
     },
 };
+
+// AI Draft
+export interface DraftReply {
+    draftText: string;
+    modelUsed: string;
+}
+
+export const draftApi = {
+    generate: async (ticketId: string) => {
+        const { draft } = await apiClient.post<{ draft: DraftReply }>(`/tickets/${ticketId}/draft`);
+        return draft;
+    },
+};

@@ -5,6 +5,7 @@ import type { Ticket, Message } from '../types';
 import { StatusBadge } from '../components/ui/StatusBadge';
 import { PriorityBadge } from '../components/ui/PriorityBadge';
 import { MessageThread } from '../components/MessageThread';
+import { DraftReplyPanel } from '../components/DraftReplyPanel';
 
 export function TicketPage() {
     const { id } = useParams<{ id: string }>();
@@ -83,6 +84,7 @@ export function TicketPage() {
                         </div>
 
                         <MessageThread messages={messages} onSend={handleSend} />
+                        <DraftReplyPanel ticketId={ticket.id} onSend={handleSend} />
                     </>
                 )}
             </main>
