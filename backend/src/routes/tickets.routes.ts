@@ -7,6 +7,7 @@ import {
 } from '../schemas/ticket.schema';
 import * as ticketService from '../services/ticket.service';
 import messagesRouter from './message.routes';
+import draftRouter from './draft.routes';
 
 const ticketsRouter = Router();
 ticketsRouter.use(requireAuth);
@@ -50,5 +51,8 @@ ticketsRouter.post('/:id/claim', async (req, res) => {
 
 // GET/POST /api/tickets/:id/messages - nested message thread
 ticketsRouter.use('/:id/messages', messagesRouter);
+
+// POST /api/tickets/:id/draft - AI draft reply (mock -> real API later)
+ticketsRouter.use('/:id/draft', draftRouter);
 
 export default ticketsRouter;
