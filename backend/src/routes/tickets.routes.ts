@@ -39,7 +39,7 @@ ticketsRouter.post('/', async (req, res) => {
 // PATCH /api/tickets/:id
 ticketsRouter.patch('/:id', async (req, res) => {
     const data = patchTicketSchema.parse(req.body);
-    const ticket = await ticketService.updateTicket(req.params.id, data);
+    const ticket = await ticketService.updateTicket(req.params.id, data, req.session!);
     res.json({ ticket });
 });
 
