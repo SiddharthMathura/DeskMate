@@ -12,13 +12,16 @@ import draftRouter from './draft.routes';
 const ticketsRouter = Router();
 ticketsRouter.use(requireAuth);
 
-// GET /api/tickets?status=open&assignedAgentId=me|unassigned|<uuid>
+// GET /api/tickets?status=open&priority=high&assignedAgentId=me|unassigned|<uuid>&sortBy=priority&sortOrder=desc
 ticketsRouter.get('/', async (req, res) => {
     const parsed = listTicketsQuerySchema.parse(req.query);
     const assignedAgentId = parsed.assignedAgentId === 'me' ? req.session!.userId : parsed.assignedAgentId;
     const tickets = await ticketService.listTickets({
         status: parsed.status,
+        priority: parsed.priority,
         assignedAgentId,
+        sortBy: parsed.sortBy,
+        sortOrder: parsed.sortOrder,
     });
     res.json({ tickets });
 });

@@ -11,7 +11,10 @@ const ticketWithRelations = {
 
 interface ListFilters {
     status?: string;
+    priority?: string;
     assignedAgentId?: string; // already resolved from "me" to a real id by the route
+    sortBy?: 'createdAt' | 'priority';
+    sortOrder?: 'asc' | 'desc';
 }
 
 // Allowed status transitions
@@ -36,16 +39,29 @@ export async function listTickets(filters: ListFilters) {
         where.status = filters.status;
     }
 
+    if (filters.priority) {
+        where.priority = filters.priority;
+    }
+
     if (filters.assignedAgentId === 'unassigned') {
         where.assignedAgentId = null;
     } else if (filters.assignedAgentId) {
         where.assignedAgentId = filters.assignedAgentId;
     }
 
+    const sortOrder = filters.sortOrder ?? 'desc';
+
+    // Built explicitly (rather than a computed-key object literal) so the
+    // shape Prisma receives is unambiguous regardless of TS inference quirks.
+    const orderBy =
+        filters.sortBy === 'priority'
+            ? { priority: sortOrder }
+            : { createdAt: sortOrder };
+
     return prisma.ticket.findMany({
         where,
         include: ticketWithRelations,
-        orderBy: { createdAt: 'desc' },
+        orderBy,
     });
 }
 

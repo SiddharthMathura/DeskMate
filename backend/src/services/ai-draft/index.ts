@@ -8,6 +8,11 @@ export type MessageWithRelations = Awaited<ReturnType<typeof messageService.list
 export interface DraftReplyResult {
     draftText: string;
     modelUsed: string;
+    // What was (or, for the mock, would be) sent to the model. Persisted to
+    // ai_draft_requests.prompt_snapshot. The real Claude implementation
+    // returns its actual constructed prompt here — the call site
+    // that logs this doesn't change. (later)
+    promptSnapshot: string;
 }
 
 // Real Claude API (later)

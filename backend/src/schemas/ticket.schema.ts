@@ -21,7 +21,10 @@ export const patchTicketSchema = z
 
 export const listTicketsQuerySchema = z.object({
     status: ticketStatusEnum.optional(),
+    priority: ticketPriorityEnum.optional(),
     assignedAgentId: z.string().optional(), // "me" | "unassigned" | a real uuid
+    sortBy: z.enum(['createdAt', 'priority']).optional().default('createdAt'),
+    sortOrder: z.enum(['asc', 'desc']).optional().default('desc'),
 });
 
 export type CreateTicketInput = z.infer<typeof createTicketSchema>;
