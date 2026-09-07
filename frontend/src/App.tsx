@@ -3,6 +3,7 @@ import { useHealthCheck } from './hooks/useHealthCheck';
 import { LoginPage } from './pages/LoginPage';
 import { InboxPage } from './pages/InboxPage';
 import { TicketPage } from './pages/TicketPage';
+import { ProtectedRoute } from './components/ProtectedRoute';
 
 function HealthCheckPage() {
   const { status, data } = useHealthCheck();
@@ -38,8 +39,8 @@ function App() {
     <Routes>
       <Route path="/" element={<HealthCheckPage />} />
       <Route path="/login" element={<LoginPage />} />
-      <Route path="/inbox" element={<InboxPage />} />
-      <Route path="/tickets/:id" element={<TicketPage />} />
+      <Route path="/inbox" element={ <ProtectedRoute> <InboxPage /> </ProtectedRoute> } />
+      <Route path="/tickets/:id" element={ <ProtectedRoute> <TicketPage /> </ProtectedRoute> } />
     </Routes>
   );
 }
