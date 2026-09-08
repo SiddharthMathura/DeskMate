@@ -69,6 +69,9 @@ export interface ListTicketsFilters {
     status?: TicketStatus;
     // "me" | "unassigned" | a real agent uuid — resolved server-side
     assignedAgentId?: string;
+    priority?: TicketPriority;
+    sortBy?: 'createdAt' | 'priority';
+    sortOrder?: 'asc' | 'desc';
 }
 
 // Messages
