@@ -11,6 +11,7 @@ import type {
 } from '../types';
 
 const API_BASE = '/api';
+const DEFAULT_TIMEOUT_MS = 15000;
 
 export class ApiError extends Error {
     status: number;
@@ -23,12 +24,51 @@ export class ApiError extends Error {
     }
 }
 
-async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-    const res = await fetch(`${API_BASE}${path}`, {
-        credentials: 'include', // sends the session cookie
-        headers: { 'Content-Type': 'application/json', ...options.headers },
-        ...options,
-    });
+interface RequestOptions extends RequestInit {
+    timeoutMs?: number;
+}
+
+async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+    const { timeoutMs = DEFAULT_TIMEOUT_MS, signal: externalSignal, ...fetchOptions } = options;
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+    let onExternalAbort: (() => void) | undefined;
+    if (externalSignal) {
+        if (externalSignal.aborted) {
+            controller.abort();
+        } else {
+            onExternalAbort = () => controller.abort();
+            externalSignal.addEventListener('abort', onExternalAbort);
+        }
+    }
+
+    let res: Response;
+    try {
+        res = await fetch(`${API_BASE}${path}`, {
+            credentials: 'include', // sends the session cookie
+            headers: { 'Content-Type': 'application/json', ...fetchOptions.headers },
+            signal: controller.signal,
+            ...fetchOptions,
+        });
+    } catch (err) {
+        // status 0 = we never got a real HTTP response (client-side outcome,
+        // not a server error). Figure out which of the three client-side
+        // causes this was: user cancelled, we timed out, or network failed.
+        if (err instanceof Error && err.name === 'AbortError') {
+            if (externalSignal?.aborted) {
+                throw new ApiError(0, 'Cancelled.');
+            }
+            throw new ApiError(0, 'Request timed out. Please try again.');
+        }
+        throw new ApiError(0, 'Could not reach the server. Check your connection.');
+    } finally {
+        clearTimeout(timeoutId);
+        if (externalSignal && onExternalAbort) {
+            externalSignal.removeEventListener('abort', onExternalAbort);
+        }
+    }
 
     if (!res.ok) {
         const body = await res.json().catch(() => ({}));
@@ -53,10 +93,15 @@ function buildQuery(params: Record<string, string | undefined>): string {
     return queryString ? `?${queryString}` : '';
 }
 
+interface CallOptions {
+    timeoutMs?: number;
+    signal?: AbortSignal;
+}
+
 export const apiClient = {
-    get: <T>(path: string) => request<T>(path),
-    post: <T>(path: string, body?: unknown) => request<T>(path, { method: 'POST', body: body ? JSON.stringify(body) : undefined }),
-    patch: <T>(path: string, body?: unknown) => request<T>(path, { method: 'PATCH', body: body ? JSON.stringify(body) : undefined }),
+    get: <T>(path: string, opts?: CallOptions) => request<T>(path, opts),
+    post: <T>(path: string, body?: unknown, opts?: CallOptions) => request<T>(path, { method: 'POST', body: body ? JSON.stringify(body) : undefined, ...opts }),
+    patch: <T>(path: string, body?: unknown, opts?: CallOptions) => request<T>(path, { method: 'PATCH', body: body ? JSON.stringify(body) : undefined, ...opts }),
 };
 
 // Auth
@@ -110,9 +155,17 @@ export interface DraftReply {
     modelUsed: string;
 }
 
+// real latency observed ranging from ~1s to 45s+ on
+// Gemini's free tier. This is a safety net so a request can never hang
+// forever; the agent-facing Cancel button is the primary control.
+const DRAFT_TIMEOUT_MS = 60000;
+
 export const draftApi = {
-    generate: async (ticketId: string) => {
-        const { draft } = await apiClient.post<{ draft: DraftReply }>(`/tickets/${ticketId}/draft`);
+    generate: async (ticketId: string, signal?: AbortSignal) => {
+        const { draft } = await apiClient.post<{ draft: DraftReply }>(`/tickets/${ticketId}/draft`,
+            undefined,
+            { timeoutMs: DRAFT_TIMEOUT_MS, signal }
+        );
         return draft;
     },
 };
