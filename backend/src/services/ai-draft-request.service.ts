@@ -15,3 +15,10 @@ export async function logDraftRequest(
         },
     });
 }
+
+export async function listDraftRequestsByTicketId(ticketId: string) {
+    return prisma.aiDraftRequest.findMany({
+        where: { ticketId },
+        orderBy: { createdAt: 'desc' },
+    });
+}
