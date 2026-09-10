@@ -155,6 +155,18 @@ export interface DraftReply {
     modelUsed: string;
 }
 
+// Matches backend ai_draft_requests
+// A failed attempt is represented as a normal row whose responseSnapshot
+// starts with "[FAILED]
+export interface DraftHistoryEntry {
+    id: string;
+    ticketId: string;
+    promptSnapshot: string;
+    responseSnapshot: string;
+    modelUsed: string;
+    createdAt: string;
+}
+
 // real latency observed ranging from ~1s to 45s+ on
 // Gemini's free tier. This is a safety net so a request can never hang
 // forever; the agent-facing Cancel button is the primary control.
@@ -167,5 +179,10 @@ export const draftApi = {
             { timeoutMs: DRAFT_TIMEOUT_MS, signal }
         );
         return draft;
+    },
+    history: async (ticketId: string) => {
+        const { draftRequests } = await apiClient.get<{ draftRequests: DraftHistoryEntry[] }>(`/tickets/${ticketId}/draft/history`
+        );
+        return draftRequests;
     },
 };
