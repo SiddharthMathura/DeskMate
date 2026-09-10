@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { ticketsApi, messagesApi, ApiError } from '../api/client';
 import type { Ticket, Message, TicketStatus } from '../types';
 import { StatusBadge } from '../components/ui/StatusBadge';
@@ -11,6 +12,7 @@ import { StatusTransitionControls } from '../components/StatusTransitionControls
 export function TicketPage() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const { user } = useAuth();
 
     const [ticket, setTicket] = useState<Ticket | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
@@ -18,6 +20,8 @@ export function TicketPage() {
     const [error, setError] = useState<string | null>(null);
     const [statusUpdating, setStatusUpdating] = useState(false);
     const [statusError, setStatusError] = useState<string | null>(null);
+    const [claiming, setClaiming] = useState(false);
+    const [claimError, setClaimError] = useState<string | null>(null);
 
     const loadTicket = useCallback(async (ticketId: string) => {
         setLoading(true);
@@ -60,6 +64,37 @@ export function TicketPage() {
         }
     }
 
+    async function handleClaim() {
+        if (!ticket) return;
+        setClaiming(true);
+        setClaimError(null);
+        try {
+            await ticketsApi.claim(ticket.id);
+            // Re-fetch rather than trust the claim response shape
+            const refreshed = await ticketsApi.get(ticket.id);
+            setTicket(refreshed);
+        } catch (err) {
+            if (err instanceof ApiError && err.status === 409) {
+                setClaimError('This ticket was just claimed by someone else.');
+                // Reflect the real current assignee rather than leaving stale state.
+                try {
+                    const refreshed = await ticketsApi.get(ticket.id);
+                    setTicket(refreshed);
+                } catch {
+                    // If this secondary fetch fails, the claimError message above
+                    // still stands
+                }
+            } else {
+                setClaimError(err instanceof ApiError ? err.message : 'Failed to claim ticket.');
+            }
+        } finally {
+            setClaiming(false);
+        }
+    }
+
+    const canClaim = Boolean(ticket) && ticket!.assignedAgent === null && ticket!.status !== 'closed';
+    const isMine = Boolean(ticket?.assignedAgent && user && ticket!.assignedAgent!.id === user.id);
+
     return (
         <div className="min-h-screen bg-paper">
             <header className="border-b border-line bg-brand px-6 py-4">
@@ -95,9 +130,32 @@ export function TicketPage() {
                                     {ticket.customer.name} · {ticket.customer.email}
                                 </span>
                             </div>
-                            <p className="mt-1 text-sm text-ink-soft">
-                                Assigned to {ticket.assignedAgent?.name ?? 'nobody'}
-                            </p>
+
+                            <div className="mt-1 flex items-center gap-3">
+                                <p className="text-sm text-ink-soft">
+                                    {ticket.assignedAgent === null
+                                        ? 'Unassigned'
+                                        : isMine
+                                          ? 'Assigned to you'
+                                          : `Assigned to ${ticket.assignedAgent.name}`}
+                                </p>
+
+                                {canClaim && (
+                                    <button
+                                        onClick={() => void handleClaim()}
+                                        disabled={claiming}
+                                        className="rounded-md border border-brand px-2.5 py-1 text-xs font-medium text-brand transition hover:bg-brand hover:text-white disabled:opacity-50"
+                                    >
+                                        {claiming ? 'Claiming…' : 'Claim'}
+                                    </button>
+                                )}
+                            </div>
+
+                            {claimError && (
+                                <div className="mt-2 rounded-md border border-status-pending/30 bg-status-pending/10 px-3 py-2 text-sm text-status-pending">
+                                    {claimError}
+                                </div>
+                            )}
 
                             {statusError && (
                                 <div className="mt-2 rounded-md border border-status-pending/30 bg-status-pending/10 px-3 py-2 text-sm text-status-pending">
