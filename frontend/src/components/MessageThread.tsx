@@ -73,7 +73,7 @@ export function MessageThread({ messages, onSend }: MessageThreadProps) {
                                 {senderLabel(message)} · {formatTimestamp(message.createdAt)}
                                 {message.isDraft && ' · draft'}
                             </span>
-                            <div className={`max-w-lg rounded-lg px-4 py-2.5 text-sm ${bubbleStyle(message.senderType)}`}>
+                            <div className={`max-w-lg whitespace-pre-wrap break-words rounded-lg px-4 py-2.5 text-sm ${bubbleStyle(message.senderType)}`}>
                                 {message.body}
                             </div>
                         </div>
