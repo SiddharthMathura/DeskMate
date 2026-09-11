@@ -19,10 +19,16 @@ export const patchTicketSchema = z
         message: 'At least one field must be provided',
     });
 
+const assignedAgentIdFilterSchema = z.union([
+    z.literal('me'),
+    z.literal('unassigned'),
+    z.string().uuid(),
+]);
+
 export const listTicketsQuerySchema = z.object({
     status: ticketStatusEnum.optional(),
     priority: ticketPriorityEnum.optional(),
-    assignedAgentId: z.string().optional(), // "me" | "unassigned" | a real uuid
+    assignedAgentId: assignedAgentIdFilterSchema.optional(),
     sortBy: z.enum(['createdAt', 'priority']).optional().default('createdAt'),
     sortOrder: z.enum(['asc', 'desc']).optional().default('desc'),
 });

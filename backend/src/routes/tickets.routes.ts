@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { requireAuth } from '../middleware/auth.middleware';
+import { validateUuidParam } from '../middleware/validate-uuid-param';
 import {
     createTicketSchema,
     patchTicketSchema,
@@ -11,6 +12,7 @@ import draftRouter from './draft.routes';
 
 const ticketsRouter = Router();
 ticketsRouter.use(requireAuth);
+ticketsRouter.param('id', validateUuidParam('Ticket id'));
 
 // GET /api/tickets?status=open&priority=high&assignedAgentId=me|unassigned|<uuid>&sortBy=priority&sortOrder=desc
 ticketsRouter.get('/', async (req, res) => {
