@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { getErrorMessage } from '../api/errorMessages';
 import type { Message } from '../types';
 
 interface MessageThreadProps {
@@ -52,8 +53,8 @@ export function MessageThread({ messages, onSend }: MessageThreadProps) {
         try {
             await onSend(body);
             setDraft('');
-        } catch {
-            setError('Failed to send message.');
+        } catch (err) {
+            setError(getErrorMessage(err, 'Failed to send message.'));
         } finally {
             setSending(false);
         }

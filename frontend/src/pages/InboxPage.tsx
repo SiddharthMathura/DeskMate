@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { ticketsApi, ApiError } from '../api/client';
+import { getErrorMessage } from '../api/errorMessages';
 import type { Ticket } from '../types';
 import { TicketList } from '../components/TicketList';
 import { AssigneeFilter, type AssigneeFilterValue } from '../components/AssigneeFilter';
@@ -18,6 +19,7 @@ export function InboxPage() {
     const [sortValue, setSortValue] = useState<SortValue>('newest');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [claimError, setClaimError] = useState<string | null>(null);
 
     const initials = user?.name
         ? user.name
@@ -42,7 +44,7 @@ export function InboxPage() {
                 });
                 setTickets(result);
             } catch (err) {
-                setError(err instanceof ApiError ? err.message : 'Failed to load tickets.');
+                setError(getErrorMessage(err, 'Failed to load tickets.'));
             } finally {
                 setLoading(false);
             }
@@ -60,12 +62,20 @@ export function InboxPage() {
     }
 
     async function handleClaim(ticket: Ticket) {
-        setError(null);
+        setClaimError(null);
         try {
             await ticketsApi.claim(ticket.id);
             await loadTickets(assigneeFilter, priorityFilter, sortValue);
         } catch (err) {
-            setError(err instanceof ApiError ? err.message : 'Failed to claim ticket.');
+            if (err instanceof ApiError && err.status === 409) {
+                setClaimError('This ticket was just claimed by someone else.');
+                // Refresh the list so the row reflects who actually has it now,
+                // instead of leaving a stale "Claim" button on a ticket that's
+                // already taken.
+                await loadTickets(assigneeFilter, priorityFilter, sortValue);
+            } else {
+                setClaimError(getErrorMessage(err, 'Failed to claim ticket.'));
+            }
         }
     }
 
@@ -100,6 +110,12 @@ export function InboxPage() {
                 {error && (
                     <div className="mb-4 rounded-md border border-status-pending/30 bg-status-pending/10 px-4 py-3 text-sm text-status-pending">
                         {error}
+                    </div>
+                )}
+
+                {claimError && (
+                    <div className="mb-4 rounded-md border border-status-pending/30 bg-status-pending/10 px-4 py-3 text-sm text-status-pending">
+                        {claimError}
                     </div>
                 )}
 
