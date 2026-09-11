@@ -8,9 +8,12 @@ const requiredEnv = (key: string): string => {
   return value;
 };
 
+const nodeEnv = process.env.NODE_ENV || 'development';
+
 export const config = {
   port: parseInt(process.env.PORT || '5000', 10),
-  nodeEnv: process.env.NODE_ENV || 'development',
+  nodeEnv,
+  isProduction: nodeEnv === 'production',
   databaseUrl: requiredEnv('DATABASE_URL'),
   redisUrl: requiredEnv('REDIS_URL'),
   sessionCookieName: process.env.SESSION_COOKIE_NAME || 'deskmate_sid',

@@ -11,6 +11,8 @@ import { HttpError } from './utils/http-error';
 
 const app = express();
 
+app.set('trust proxy', 1);
+
 // Application Middleware Layers
 app.use(cors({ 
     origin: config.frontendOrigin, 

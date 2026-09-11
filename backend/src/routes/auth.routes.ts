@@ -13,6 +13,17 @@ const loginSchema = z.object({
     password: z.string().min(1),
 });
 
+// Cross-origin (Vercel frontend -> Render backend) requires sameSite:'none',
+// which browsers only honor when secure:true. Locally, frontend/backend share
+// a scheme+effective-site so 'lax' + no HTTPS
+function sessionCookieOptions() {
+    return {
+        httpOnly: true,
+        secure: config.isProduction,
+        sameSite: (config.isProduction ? 'none' : 'lax') as 'lax' | 'none',
+    };
+}
+
 router.post('/login', async (req: Request, res: Response) => {
     const parsed = loginSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -39,9 +50,7 @@ router.post('/login', async (req: Request, res: Response) => {
     const sessionId = await createSession({ userId: user.id, role: user.role });
 
     res.cookie(config.sessionCookieName, sessionId, {
-        httpOnly: true,
-        secure: config.nodeEnv === 'production',
-        sameSite: 'lax',
+        ...sessionCookieOptions(),
         maxAge: SESSION_TTL_SECONDS * 1000,
     });
 
@@ -60,7 +69,7 @@ router.post('/logout', async (req: Request, res: Response) => {
         await destroySession(sessionId);
     }
 
-    res.clearCookie(config.sessionCookieName);
+    res.clearCookie(config.sessionCookieName, sessionCookieOptions());
     res.status(204).send();
 });
 
