@@ -4,6 +4,7 @@ import * as messageService from '../services/message.service';
 import { generateDraftReply } from '../services/ai-draft';
 import { MODEL as GEMINI_MODEL } from '../services/ai-draft/gemini';
 import { logDraftRequest, listDraftRequestsByTicketId } from '../services/ai-draft-request.service';
+import { draftCooldown } from '../middleware/draft-cooldown.middleware';
 
 const draftRouter = Router({ mergeParams: true });
 
@@ -14,8 +15,14 @@ function modelUsedForCurrentMode(): string {
     return mode === 'live' ? GEMINI_MODEL : 'mock';
 }
 
+function isQuotaExceededError(err: unknown): boolean {
+    if (!(err instanceof Error)) return false;
+    const msg = err.message.toLowerCase();
+    return msg.includes('429') || msg.includes('resource_exhausted') || msg.includes('quota');
+}
+
 // POST /api/tickets/:id/draft
-draftRouter.post('/', async (req, res) => {
+draftRouter.post('/', draftCooldown, async (req, res) => {
     const params = req.params as { id: string };
     const ticket = await ticketService.getTicketById(params.id);
     const thread = await messageService.listMessagesByTicketId(params.id);
@@ -35,7 +42,14 @@ draftRouter.post('/', async (req, res) => {
             console.error(`Failed to log AI draft failure for ticket ${ticket.id}:`, logErr);
         });
 
-        throw err; // re-throw unchanged so Express 5 error middleware still handles it
+        if (isQuotaExceededError(err)) {
+            res.status(429).json({
+                error: 'The AI draft service is temporarily at capacity. Please try again shortly.',
+            });
+            return;
+        }
+
+        throw err; // re-throw unchanged so Express 5 error middleware still handles other errors
     }
 
     logDraftRequest(ticket.id, result.promptSnapshot, result.draftText, result.modelUsed)

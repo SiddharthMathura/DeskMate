@@ -8,6 +8,7 @@ import { attachSession } from './middleware/auth.middleware';
 import { ZodError } from 'zod';
 import ticketsRouter from './routes/tickets.routes';
 import { HttpError } from './utils/http-error';
+import adminRouter from './routes/admin.routes';
 
 const app = express();
 
@@ -26,6 +27,7 @@ app.use(attachSession);
 app.use('/api/health', healthRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/tickets', ticketsRouter);
+app.use('/api/admin', adminRouter);
 
 // Fallback 404 Route (Catch - all)
 app.use((_req : Request, res: Response) => {

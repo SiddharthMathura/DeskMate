@@ -1,0 +1,21 @@
+name: Reseed Demo Data
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'   # every 6 hours
+  workflow_dispatch: {}       # allows manual trigger from the Actions tab
+
+jobs:
+  reseed:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger reseed endpoint
+        run: |
+          status=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
+            -H "X-Reseed-Secret: ${{ secrets.RESEED_SECRET }}" \
+            https://deskmate-backend-gv25.onrender.com/api/admin/reseed)
+          echo "Response status: $status"
+          if [ "$status" -ne 200 ]; then
+            echo "Reseed failed"
+            exit 1
+          fi

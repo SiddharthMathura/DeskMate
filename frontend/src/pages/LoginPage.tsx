@@ -7,6 +7,9 @@ interface LocationState {
     from?: string;
 }
 
+const DEMO_EMAIL = 'agent@deskmate.test';
+const DEMO_PASSWORD = 'AgentPass123!';
+
 export function LoginPage() {
     const { login, status } = useAuth();
     const navigate = useNavigate();
@@ -21,6 +24,12 @@ export function LoginPage() {
     if (status === 'authenticated') {
         const redirectTo = (location.state as LocationState | null)?.from ?? '/inbox';
         return <Navigate to={redirectTo} replace />;
+    }
+
+    function fillDemoCredentials() {
+        setEmail(DEMO_EMAIL);
+        setPassword(DEMO_PASSWORD);
+        setError(null);
     }
 
     async function handleSubmit(e: FormEvent) {
@@ -77,7 +86,21 @@ export function LoginPage() {
                     <h1 className="text-xl font-semibold text-ink">Sign in</h1>
                     <p className="mt-1 text-sm text-ink-soft">Use your agent account to access the inbox.</p>
 
-                    <form onSubmit={handleSubmit} className="mt-8 space-y-4">
+                    <div className="mt-4 rounded-md border border-line bg-surface px-4 py-3">
+                        <p className="text-xs font-medium uppercase tracking-wide text-ink-soft">Demo access</p>
+                        <p className="mt-1 text-sm text-ink">
+                            {DEMO_EMAIL} <span className="text-ink-soft">/</span> {DEMO_PASSWORD}
+                        </p>
+                        <button
+                            type="button"
+                            onClick={fillDemoCredentials}
+                            className="mt-2 text-sm font-medium text-brand hover:text-brand-dark focus:outline-none"
+                        >
+                            Fill demo credentials
+                        </button>
+                    </div>
+
+                    <form onSubmit={handleSubmit} className="mt-6 space-y-4">
                         <div>
                             <label htmlFor="email" className="block text-sm font-medium text-ink">
                                 Email
