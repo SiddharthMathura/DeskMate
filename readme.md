@@ -1,6 +1,6 @@
 # 🎫 DeskMate
 
-DeskMate lets a small support team manage incoming tickets from customers, assign them to agents, and reply faster using AI-drafted responses that the agent reviews and edits before sending.
+DeskMate is a lightweight helpdesk / support-ticketing web app for small teams, with an AI-assisted reply drafter. Support agents see a shared inbox of tickets, claim one, read the customer thread, click "Generate Draft," get an AI-written reply grounded in the ticket context, edit it, and send.
 
 [![Live Demo](https://img.shields.io/badge/demo-live-brightgreen)](https://desk-mate-iota.vercel.app)
 [![Backend](https://img.shields.io/badge/api-render-46E3B7)](https://deskmate-backend-gv25.onrender.com)
