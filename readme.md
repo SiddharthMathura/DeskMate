@@ -8,7 +8,7 @@ DeskMate lets a small support team manage incoming tickets from customers, assig
 [![Express](https://img.shields.io/badge/backend-Express%205-000000)](https://expressjs.com)
 [![Prisma](https://img.shields.io/badge/orm-Prisma-2D3748)](https://www.prisma.io)
 
-**🔗 [Live app](https://desk-mate-iota.vercel.app)** · **🔗 [Backend API](https://deskmate-backend-gv25.onrender.com)**
+**🔗 [Live app](https://desk-mate-iota.vercel.app/login)** · **🔗 [Backend API](https://deskmate-backend-gv25.onrender.com)**
 
 ---
 
